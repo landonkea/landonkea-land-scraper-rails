@@ -1,0 +1,24 @@
+# Two fixture listings with different source/source_id pairs (the unique index requires
+# that combination to be distinct), one scoring "good" and one not, so tests can exercise
+# both the good scope and plain listing behavior without hitting a real scraper.
+good_parcel:
+  source: craigslist
+  source_id: https://phoenix.craigslist.org/rea/1
+  title: 5 acres near Prescott with water well
+  price: 4500.00
+  url: https://phoenix.craigslist.org/rea/1
+  location: Prescott, AZ
+  description: Water well on property, no HOA, owner financing available
+  score: 95
+  first_seen_at: 2026-08-20 06:00:00
+
+low_score_parcel:
+  source: adot
+  source_id: EL-1234
+  title: ADOT excess land parcel with no notable features
+  price: 88000.00
+  url: https://azdot.gov/business/right-way-properties
+  location: Yuma, AZ
+  description: Plain vacant land, no special features mentioned
+  score: 40
+  first_seen_at: 2026-08-20 06:05:00

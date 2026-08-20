@@ -1,0 +1,86 @@
+<%# This is the one dashboard page the app has: every current land listing, best score first. %>
+<%# content_for :title overrides the page <title> tag set in the layout, so the browser tab says something useful. %>
+<% content_for :title, "Land Scraper Dashboard" %>
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <%# Page heading and a one-line explanation of what the numbers below mean. %>
+  <h1 class="text-2xl font-bold text-gray-900">Arizona Land Listings</h1>
+  <p class="text-gray-600 mt-1">Every parcel the scraper currently knows about, ranked by score.</p>
+
+  <%# A small stats strip: how many listings total, how many are "good" (score 50+), and when the scraper last ran. %>
+  <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-700">
+    <%# @total_count comes from the controller as Listing.count. %>
+    <span class="bg-gray-100 rounded px-3 py-1"><strong><%= @total_count %></strong> total listings</span>
+    <%# @good_count is Listing.good.count — the score >= 50 group. %>
+    <span class="bg-green-100 rounded px-3 py-1"><strong><%= @good_count %></strong> scored 50+</span>
+    <%# @last_scraped_at is the newest first_seen_at timestamp across all listings; nil if the scraper hasn't run yet. %>
+    <span class="bg-gray-100 rounded px-3 py-1">
+      Last scraped:
+      <%# strftime formats the timestamp readably; falls back to "never" when there's no data yet. %>
+      <%= @last_scraped_at ? @last_scraped_at.strftime("%b %-d, %Y %-I:%M %p") : "never" %>
+    </span>
+  </div>
+
+  <%# The filter form — GETs back to this same page with ?source=...&max_price=... params, which the controller reads. %>
+  <%= form_with url: listings_path, method: :get, local: true, class: "mt-6 flex flex-wrap items-end gap-3" do %>
+    <div>
+      <%# Label for the source dropdown, tied to the select below via matching id/for. %>
+      <label for="source" class="block text-xs font-medium text-gray-500 mb-1">Source</label>
+      <%# select_tag builds the dropdown; options_for_select marks whichever source is in params as selected so the filter "sticks" after submit. %>
+      <%= select_tag :source, options_for_select([ [ "All sources", "" ] ] + @sources.map { |s| [ s.titleize, s ] }, params[:source]), id: "source", class: "border border-gray-300 rounded px-2 py-1.5 text-sm" %>
+    </div>
+    <div>
+      <%# Simple numeric input for a max-price ceiling filter. %>
+      <label for="max_price" class="block text-xs font-medium text-gray-500 mb-1">Max price</label>
+      <%= number_field_tag :max_price, params[:max_price], id: "max_price", placeholder: "Any", class: "border border-gray-300 rounded px-2 py-1.5 text-sm w-28" %>
+    </div>
+    <%# Submitting the form re-runs the GET request with whatever filters are set. %>
+    <%= submit_tag "Filter", class: "bg-gray-900 text-white text-sm px-4 py-1.5 rounded hover:bg-gray-700" %>
+    <%# A plain link back to the unfiltered view, only useful once a filter is actually applied. %>
+    <%= link_to "Clear", listings_path, class: "text-sm text-gray-500 hover:underline" %>
+  <% end %>
+
+  <%# The actual listings table. %>
+  <div class="mt-6 overflow-x-auto border border-gray-200 rounded-lg">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <%# Column headers, left to right in the same order the row cells below use. %>
+          <th class="px-3 py-2 text-left font-medium text-gray-500">Score</th>
+          <th class="px-3 py-2 text-left font-medium text-gray-500">Price</th>
+          <th class="px-3 py-2 text-left font-medium text-gray-500">Title</th>
+          <th class="px-3 py-2 text-left font-medium text-gray-500">Location</th>
+          <th class="px-3 py-2 text-left font-medium text-gray-500">Source</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <%# Loop over every listing the controller already sorted/filtered for us. %>
+        <% @listings.each do |listing| %>
+          <tr class="hover:bg-gray-50">
+            <%# Score badge — green for good?, gray otherwise, using the model's good? helper instead of repeating the ">= 50" check here. %>
+            <td class="px-3 py-2">
+              <span class="inline-block rounded px-2 py-0.5 text-xs font-semibold <%= listing.good? ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600" %>">
+                <%= listing.score %>
+              </span>
+            </td>
+            <%# number_to_currency formats the decimal price as $1,234, dropping cents since these are round-dollar asking prices. %>
+            <td class="px-3 py-2 whitespace-nowrap"><%= number_to_currency(listing.price, precision: 0) %></td>
+            <%# The title links straight out to the original listing on whatever site it came from. %>
+            <td class="px-3 py-2 max-w-md truncate">
+              <%= link_to listing.title, listing.url, target: "_blank", rel: "noopener", class: "text-blue-700 hover:underline" %>
+            </td>
+            <%# Location falls back to an em-dash when the scraper didn't find one for this row. %>
+            <td class="px-3 py-2 text-gray-600"><%= listing.location.presence || "—" %></td>
+            <%# Source name, titleized so "cochise_county" reads as "Cochise County". %>
+            <td class="px-3 py-2 text-gray-500"><%= listing.source.titleize %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <%# Empty state shown only when the filtered/unfiltered list has nothing in it. %>
+    <% if @listings.none? %>
+      <p class="text-center text-gray-500 py-8">No listings yet — the scrape job hasn't run, or your filters matched nothing.</p>
+    <% end %>
+  </div>
+</div>

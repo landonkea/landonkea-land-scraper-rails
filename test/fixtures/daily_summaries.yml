@@ -1,0 +1,19 @@
+# Two fixture summaries on different dates (summary_date is unique per row), standing in
+# for two days' worth of history.py-style snapshots.
+yesterday:
+  summary_date: 2026-08-19
+  total: 40
+  good: 12
+  avg_price: 22000.00
+  median_price: 15000.00
+  avg_score: 58.4
+  by_source: '{"craigslist":{"count":30,"avg_price":21000},"adot":{"count":10,"avg_price":25000}}'
+
+today:
+  summary_date: 2026-08-20
+  total: 45
+  good: 15
+  avg_price: 21000.00
+  median_price: 14000.00
+  avg_score: 60.1
+  by_source: '{"craigslist":{"count":33,"avg_price":20000},"adot":{"count":12,"avg_price":24000}}'

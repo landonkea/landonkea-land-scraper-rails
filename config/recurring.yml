@@ -1,0 +1,31 @@
+# examples:
+#   periodic_cleanup:
+#     class: CleanSoftDeletedRecordsJob
+#     queue: background
+#     args: [ 1000, { batch_size: 500 } ]
+#     schedule: every hour
+#   periodic_cleanup_with_command:
+#     command: "SoftDeletedRecord.due.delete_all"
+#     priority: 2
+#     schedule: at 5am every day
+
+production:
+  clear_solid_queue_finished_jobs:
+    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    schedule: every hour at minute 12
+  # This is the recurring scrape itself. The Python version's GitHub Actions workflow ran
+  # on cron "0 13 * * *" (13:00 UTC every day, which is 6am Arizona time — AZ doesn't
+  # observe daylight saving, so it's always UTC-7), so we point Solid Queue's built-in
+  # recurring-task scheduler at the same cron expression to keep the same cadence.
+  scrape_land:
+    class: ScrapeLandJob
+    queue: default
+    schedule: "0 13 * * *"
+
+development:
+  # Same daily job in development too, mostly so `bin/jobs` has something real to show
+  # while testing locally — it's harmless to leave scheduled even if nobody's watching.
+  scrape_land:
+    class: ScrapeLandJob
+    queue: default
+    schedule: "0 13 * * *"
